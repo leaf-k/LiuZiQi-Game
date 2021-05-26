@@ -28,7 +28,7 @@ public:
 
 
 public slots:
-    void showTimelimit1();              //倒计时槽函数
+    void showTimelimit1();                         //倒计时槽函数
     void showTimelimit2();
     void showNettimelimit();
 
@@ -57,6 +57,7 @@ private:
     QTcpSocket *socket;
     bool NetFlag=false;
 
+    int netplayer=WHITE;                            //网络对战先后手顺序标记
 
 
 private slots:

@@ -16,10 +16,12 @@ MainWindow::MainWindow(QWidget *parent)
 
     ui->pushButton->setStyleSheet("background-color: rgb(255, 255, 255,150);");     //设置按钮颜色
     ui->pushButton_2->setStyleSheet("background-color: rgb(255, 255, 255,150);");
+
     ui->label_nettime->hide();
     ui->nettime->hide();
+    ui->NetplayerLabel->hide();
 
-    blackqizi=true;
+    blackqizi=true;                                              //设置默认值
     mode=Normal;
 
     QLabel *netlable= new QLabel(this);
@@ -27,7 +29,8 @@ MainWindow::MainWindow(QWidget *parent)
     ui->statusbar->setFixedHeight(40);
     ui->statusbar->addWidget(lable);
 
-    connect(ui->actionnormal,&QAction::triggered,this,[=](){     //双人对战模式
+
+    connect(ui->actionnormal,&QAction::triggered,this,[=](){      //双人对战模式
 
         mode=Normal;
         ui->pushButton_2->show();
@@ -38,6 +41,8 @@ MainWindow::MainWindow(QWidget *parent)
         ui->label_2->show();
         ui->label_nettime->hide();
         ui->nettime->hide();
+        ui->NetplayerLabel->hide();
+
         lable->setText("  当前游戏模式：双人对战  ");
         ui->statusbar->addWidget(lable);
         netlable->setText(" ");
@@ -45,7 +50,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     });
 
-    connect(ui->actionAI,&QAction::triggered,this,[=](){      //人机对战模式
+    connect(ui->actionAI,&QAction::triggered,this,[=](){       //人机对战模式
 
         mode=AI;
         ui->pushButton_2->hide();
@@ -56,13 +61,15 @@ MainWindow::MainWindow(QWidget *parent)
         ui->label_2->show();
         ui->label_nettime->hide();
         ui->nettime->hide();
+        ui->NetplayerLabel->hide();
+
         lable->setText("  当前游戏模式：人机对战  ");
         ui->statusbar->addWidget(lable);
         netlable->setText(" ");
         ui->statusbar->addPermanentWidget(netlable);
     });
 
-    connect(ui->actionnetgame,&QAction::triggered,this,[=](){     //网络对战模式
+    connect(ui->actionnetgame,&QAction::triggered,this,[=](){      //网络对战模式
 
         mode=Net;
         ui->pushButton_2->hide();
@@ -72,7 +79,8 @@ MainWindow::MainWindow(QWidget *parent)
         ui->label2->hide();
         ui->label_2->hide();
         ui->label_nettime->show();
-        ui->nettime->show();
+        ui->nettime->show();       
+
         lable->setText("  当前游戏模式：网络对战  ");
         ui->statusbar->addWidget(lable);
 
@@ -83,6 +91,7 @@ MainWindow::MainWindow(QWidget *parent)
         connect(gameserver,&QTcpServer::newConnection,this,[=](){     //提示客户端已连接，准备读取信息
                 netlable->setText("客户端连接成功！");
                 ui->statusbar->addPermanentWidget(netlable);
+                ui->NetplayerLabel->show();
                 NetFlag=true;
 
                 socket=gameserver->nextPendingConnection();
@@ -94,7 +103,7 @@ MainWindow::MainWindow(QWidget *parent)
     });
 
 
-    connect(ui->pushButton,&QPushButton::clicked,this,[=](){       //重新开始
+    connect(ui->pushButton,&QPushButton::clicked,this,[=](){         //重新开始
         if(blackqizi)
         {
             Time2->stop();
@@ -108,7 +117,7 @@ MainWindow::MainWindow(QWidget *parent)
         renew();
     });
 
-    connect(ui->pushButton_2,&QPushButton::clicked,this,[=](){     //悔棋
+    connect(ui->pushButton_2,&QPushButton::clicked,this,[=](){        //悔棋
         if(mode==Normal)
         {
             if(blackqizi)
@@ -152,60 +161,92 @@ MainWindow::~MainWindow()
 }
 
 
-void MainWindow::receivemessage()          //网络对战接收客户端棋盘信息
+void MainWindow::receivemessage()                         //网络对战接收客户端棋盘信息
 {
     char bufferReceive[445];
     for(int i=0;i<442;i++)
         bufferReceive[i]='0';
     socket->read(bufferReceive,socket->bytesAvailable());
 
-    if(bufferReceive[441]=='r')            //客户端要求重新开始
+    if(bufferReceive[0]=='w')                              //bufferReceive[0] 接收客户端选择的先后手顺序
     {
-        Nettimer->stop();
-        ui->nettime->setText("15");
-        renew();
-    }
+        ui->NetplayerLabel->setText("执黑棋，先落子");
+        netplayer=BLACK;
+        bufferReceive[0]='0';
 
-    else if(bufferReceive[441]=='w')        //客户端落子超时
+    }
+    else if(bufferReceive[0]=='b')
     {
-        Nettimer->stop();
-        ui->nettime->setText("15");
-        QMessageBox::warning(NULL,"超时：","白棋胜！");
-        renew();
+        ui->NetplayerLabel->setText("执白棋，后落子");
+        netplayer=WHITE;
+        bufferReceive[0]='0';
+
     }
 
     else
     {
-        for(int i=0;i<441;i++)
+        if(bufferReceive[441]=='r')                          //客户端要求重新开始
         {
-            if(bufferReceive[i]=='1')
-            {
-                board.placeqizi(i/21,i%21,BLACK);
-            }
-            if(bufferReceive[i]=='2')
-            {
-                board.placeqizi(i/21,i%21,WHITE);
-            }
+            Nettimer->stop();
+            ui->nettime->setText("15");
+            renew();
         }
-        update();
 
-        if(judger.judgewin(board,bufferReceive[442]-'0',bufferReceive[443]-'0'))
+        else if(bufferReceive[441]=='c')                     //客户端落子超时
         {
-            bufferReceive[441]='b';                           //发送客户端获胜信息
-            socket->write(bufferReceive);
-            QMessageBox::warning(NULL,"胜负已定：","黑棋胜！");
+            Nettimer->stop();
+            ui->nettime->setText("15");
+            if(netplayer==WHITE)
+                QMessageBox::warning(NULL,"超时：","白棋胜！");
+            else
+                QMessageBox::warning(NULL,"超时：","黑棋胜！");
             renew();
         }
-        else if(judger.FLAG)
-        {
-            bufferReceive[441]='j';                           //发送客户端出现禁手信息
-            socket->write(bufferReceive);
-            QMessageBox::warning(NULL,"出现禁手：","白棋胜！");
-            renew();
-        }
+
         else
-        nettimer();
+        {
+            for(int i=0;i<441;i++)
+            {
+                if(bufferReceive[i]=='1')
+                {
+                    board.placeqizi(i/21,i%21,BLACK);
+                }
+                if(bufferReceive[i]=='2')
+                {
+                    board.placeqizi(i/21,i%21,WHITE);
+                }
+            }
+            update();
+
+            if(judger.judgewin(board,bufferReceive[442]-'0',bufferReceive[443]-'0'))
+            {
+                if(netplayer==WHITE)
+                {
+                    bufferReceive[441]='b';                             //发送获胜信息
+                    socket->write(bufferReceive);
+                    QMessageBox::warning(NULL,"胜负已定：","黑棋胜！");
+                }
+                else
+                {
+                    bufferReceive[441]='w';
+                    socket->write(bufferReceive);
+                    QMessageBox::warning(NULL,"胜负已定：","白棋胜！");
+                }
+                renew();
+            }
+
+            else if(netplayer==WHITE&&judger.FLAG)
+            {
+                bufferReceive[441]='j';                                  //发送出现禁手信息
+                socket->write(bufferReceive);
+                QMessageBox::warning(NULL,"出现禁手：","白棋胜！");
+                renew();
+            }
+            else
+            nettimer();
+        }
     }
+
 
 }
 
@@ -214,8 +255,8 @@ void MainWindow::receivemessage()          //网络对战接收客户端棋盘�
 
 void MainWindow::paintEvent(QPaintEvent *event){
     const int size=20;
-    const int width=40;      //每格的宽度
-    const int x=40,y=70;     //棋盘上(0,0)点坐标为(40,70)
+    const int width=40;         //每格的宽度
+    const int x=40,y=70;        //棋盘上(0,0)点坐标为(40,70)
 
 
     //画棋盘
@@ -355,7 +396,7 @@ void MainWindow::mouseReleaseEvent(QMouseEvent *event)
                 {
                     TIME=15;
                     timer2();
-                    QTimer::singleShot(600,this,SLOT(AIplacenode()));    //AI 停顿0.6s后下棋
+                    QTimer::singleShot(600,this,SLOT(AIplacenode()));      //AI 停顿0.6s后下棋
                 }
                 update();
             }
@@ -372,36 +413,62 @@ void MainWindow::mouseReleaseEvent(QMouseEvent *event)
             }
             else
             {
-                if(board.getbnum()<=board.getwnum())
+                if(netplayer==WHITE&&board.getbnum()<=board.getwnum())
+                    QMessageBox::warning(NULL,"提示：","请等待客户端落子！");
+                else if(netplayer==BLACK&&board.getbnum()!=board.getwnum()&&board.getbnum()!=0)
                     QMessageBox::warning(NULL,"提示：","请等待客户端落子！");
                 else if(board.showqizi(i,j)==-1)
                 {
-                    Nettimer->stop();
-                    ui->nettime->setText("15");
+                    if(netplayer==BLACK&&board.getbnum()!=0)
+                    {
+                        Nettimer->stop();
+                        ui->nettime->setText("15");
+                    }
+                    else if(netplayer==WHITE)
+                    {
+                        Nettimer->stop();
+                        ui->nettime->setText("15");
+                    }
 
-                    char buffer[443];               //buffer[441]=w/b 白棋/黑棋赢标志
+                    char buffer[443];              //buffer[441]=w/b/j/c  白棋赢/黑棋赢/禁手/超时标志
+                    int k=0;
 
-                    board.placeqizi(i,j,WHITE);
+                    for(int i=0;i<21;i++)
+                    {
+                        for(int j=0;j<21;j++)
+                        {
+                            buffer[k]='0';
+                            k++;
+                        }
+                    }
+
+                    board.placeqizi(i,j,netplayer);
                     update();
+
                     if(judger.judgewin(board,i,j))
                     {
-                        buffer[441]='w';
-                        int k=0;
+                        if(netplayer==WHITE)
+                            buffer[441]='w';
+                        else
+                            buffer[441]='b';
 
-                        for(int i=0;i<21;i++)
-                        {
-                            for(int j=0;j<21;j++)
-                            {
-                                buffer[k]='0';
-                                k++;
-                            }
-                        }
                         socket->write(buffer);
 
-                        QMessageBox::warning(NULL,"胜负已定：","白棋胜！");
+                        if(netplayer==WHITE)
+                            QMessageBox::warning(NULL,"胜负已定：","白棋胜！");
+                        else
+                            QMessageBox::warning(NULL,"胜负已定：","黑棋胜！");
                         renew();
                     }
-                     else
+                    else if(netplayer==BLACK&&judger.FLAG)
+                    {
+                        buffer[441]='j';
+                        socket->write(buffer);
+                        QMessageBox::warning(NULL,"出现禁手：","白棋胜！");
+                        renew();
+                    }
+
+                    else
                     {
                         int k=0;
 
@@ -423,8 +490,9 @@ void MainWindow::mouseReleaseEvent(QMouseEvent *event)
 
         }
 
+        //和棋
         if(judger.judgedraw(board))
-        {
+        {            
             Time2->stop();
             Time1->stop();
             QMessageBox::warning(NULL,"比赛结果：","和棋");
@@ -435,7 +503,7 @@ void MainWindow::mouseReleaseEvent(QMouseEvent *event)
 
 
 
-void MainWindow::renew()       //更新棋盘，全部初始化
+void MainWindow::renew()                               //更新棋盘，全部初始化
 {
     TIME=15;
 
@@ -464,7 +532,7 @@ void MainWindow::renew()       //更新棋盘，全部初始化
 }
 
 
-void MainWindow::AIplacenode()        //AI下棋
+void MainWindow::AIplacenode()                                    //AI下棋
 {
         judger.jugdevalue(&board);
         int max=0,k=1;
@@ -492,7 +560,7 @@ void MainWindow::AIplacenode()        //AI下棋
             }
         }
 
-        srand(time(0));               //随机选择分数最大的一点落子
+        srand(time(0));                                          //随机选择分数最大的一点落子
         int n=(rand()%(k-1))+1;
         board.placeqizi(maxvalue[n].x,maxvalue[n].y,WHITE);
         blackqizi=true;
@@ -508,7 +576,7 @@ void MainWindow::AIplacenode()        //AI下棋
 
 
 
-void MainWindow::timer1()     //白棋倒计时
+void MainWindow::timer1()                                           //白棋倒计时
 {
     TIME=15;
     Time1 = new QTimer(this);
@@ -537,7 +605,7 @@ void MainWindow::showTimelimit1()
 }
 
 
-void MainWindow::timer2()     //黑棋倒计时
+void MainWindow::timer2()                                          //黑棋倒计时
 {
     TIME=15;
     Time2 = new QTimer(this);
@@ -566,7 +634,7 @@ void MainWindow::showTimelimit2()
 }
 
 
-void MainWindow::nettimer()     //网络倒计时
+void MainWindow::nettimer()                                             //网络倒计时
 {
     TIME=15;
     Nettimer = new QTimer(this);
@@ -589,9 +657,12 @@ void MainWindow::showNettimelimit()
         char buffertime[443];
         for(int i=0;i<441;i++)
             buffertime[i]='0';
-        buffertime[441]='b';
+        buffertime[441]='c';
         socket->write(buffertime);
-        QMessageBox::warning(NULL,"超时：","黑棋胜！");
+        if(netplayer==BLACK)
+            QMessageBox::warning(NULL,"超时：","黑棋胜！");
+        else
+            QMessageBox::warning(NULL,"超时：","白棋胜！");
         renew();
         Nettimer->stop();
         ui->nettime->setText("15");
@@ -601,7 +672,7 @@ void MainWindow::showNettimelimit()
 
 
 
-QImage MainWindow::ConvertImageToTransparent(QImage image)       //设置背景图片透明程度
+QImage MainWindow::ConvertImageToTransparent(QImage image)           //设置背景图片透明程度
 {
         image = image.convertToFormat(QImage::Format_ARGB32);
         union myrgb

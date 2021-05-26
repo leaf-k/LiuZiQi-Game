@@ -79,7 +79,7 @@ class checkerboard{                           //棋盘类
             qz[x][y].setplayer(p);
             value[x][y]=0;
 
-            if(p==BLACK)                  //放入棋子路径数组
+            if(p==BLACK)                          //放入棋子路径数组
             {
                 ib++;
                 nodeblack[ib].x=x;
@@ -93,19 +93,19 @@ class checkerboard{                           //棋盘类
             }
         }
 
-        int showqizi(int x,int y)              //展示指定点棋子的player
+        int showqizi(int x,int y)                 //展示指定点棋子的player
         {
             if(x<0||x>20||y<0||y>20)
             return -1;            
             return qz[x][y].getplayer();
         }
 
-        void setundoqz(int x,int y)             //悔棋后设置Player为-1
+        void setundoqz(int x,int y)               //悔棋后设置Player为-1
         {
             qz[x][y].setplayer(-1);
         }
 
-        void undo(int p)                        //悔棋
+        void undo(int p)                          //悔棋
         {
             if(p==BLACK)
             {
@@ -123,7 +123,7 @@ class checkerboard{                           //棋盘类
             }
         }
 
-        int getbnum()                    //获取已下棋子个数
+        int getbnum()                       //获取已下棋子个数
         {
             return ib;
         }
@@ -460,7 +460,7 @@ class judgement{
                     }
 
 
-                    if(board->showqizi(i,j)==WHITE)          //白棋评分
+                    if(board->showqizi(i,j)==WHITE)               //白棋评分
                     {
                         for(int k=0;k<8;k++)
                         {
@@ -486,7 +486,7 @@ class judgement{
                                     empty2++;
                                     if(empty2==1)
                                     {
-                                        X1=X;                 //记录空格坐标
+                                        X1=X;                    //记录空格坐标
                                         Y1=Y;
                                     }
                                     else
@@ -527,10 +527,10 @@ class judgement{
                                 if(num2==3&&empty2!=0)
                                 {
                                     if(empty2==1)
-                                            board->value[X1][Y1]+=30;     //死三
+                                            board->value[X1][Y1]+=30;       //死三
                                     else
                                     {
-                                            board->value[X1][Y1]+=50;     //活三
+                                            board->value[X1][Y1]+=50;       //活三
                                             board->value[X2][Y2]+=50;
                                     }
                                 }
@@ -538,15 +538,15 @@ class judgement{
                                 if(num2==4&&empty2!=0)
                                 {
                                     if(empty2==1)
-                                            board->value[X1][Y1]+=200;    //死四
+                                            board->value[X1][Y1]+=200;      //死四
                                     else
                                     {
-                                            board->value[X1][Y1]+=2000;   //活四
+                                            board->value[X1][Y1]+=2000;     //活四
                                             board->value[X2][Y2]+=2000;
                                     }
                                 }
 
-                                if(num2==5&&empty2!=0)                     //活五
+                                if(num2==5&&empty2!=0)                      //活五
                                 {
                                     if(empty2==1)
                                             board->value[X1][Y1]+=20000;
