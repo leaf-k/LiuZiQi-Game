@@ -10,11 +10,11 @@ int main(int argc, char *argv[])
     MainWindow w;
     w.show();
 
-    w.setWindowIcon(QIcon(":/icon1.jpg"));
+    w.setWindowIcon(QIcon(":/icon1.jpg"));               //窗口图标
 
     w.autoFillBackground();
     QPalette pal;
-    QImage image=QImage(":/background3.jpg");
+    QImage image=QImage(":/background3.jpg");            //窗口背景图片
     pal.setBrush(QPalette::Background,QBrush(image));
     w.setPalette(pal);
 
