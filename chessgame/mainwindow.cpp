@@ -104,17 +104,21 @@ MainWindow::MainWindow(QWidget *parent)
 
 
     connect(ui->pushButton,&QPushButton::clicked,this,[=](){         //重新开始
-        if(blackqizi)
+        if(board.getbnum()!=0||board.getwnum()!=0)
         {
-            Time2->stop();
-            ui->label2->setText("15");
+            if(blackqizi)
+            {
+                Time2->stop();
+                ui->label2->setText("15");
+            }
+            else
+            {
+                Time1->stop();
+                ui->label->setText("15");
+            }
+            renew();
         }
-        else
-        {
-            Time1->stop();
-            ui->label->setText("15");
-        }
-        renew();
+
     });
 
     connect(ui->pushButton_2,&QPushButton::clicked,this,[=](){        //悔棋
@@ -346,14 +350,12 @@ void MainWindow::mouseReleaseEvent(QMouseEvent *event)
                 if(p==BLACK)
                 {                   
                     Time1->stop();
-                    Time2->stop();
                     QMessageBox::warning(NULL,"胜负已定：","黑棋胜！");
                     renew();
                 }
                 if(p==WHITE)
                 {                    
                     Time2->stop();
-                    Time1->stop();
                     QMessageBox::warning(NULL,"胜负已定：","白棋胜！");
                     renew();
                 }
@@ -363,6 +365,7 @@ void MainWindow::mouseReleaseEvent(QMouseEvent *event)
 
         if(judger.FLAG)
         {
+            Time1->stop();
             QMessageBox::warning(NULL,"出现禁手：","白棋胜！");
             renew();
         }
