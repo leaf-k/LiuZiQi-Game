@@ -14,93 +14,45 @@ MainWindow::MainWindow(QWidget *parent)
 
     ui->setupUi(this);
 
+    setContextMenuPolicy(Qt::DefaultContextMenu);
+
+
     ui->pushButton->setStyleSheet("background-color: rgb(255, 255, 255,150);");     //设置按钮颜色
     ui->pushButton_2->setStyleSheet("background-color: rgb(255, 255, 255,150);");
+    ui->pushButton_ai->setStyleSheet("background-color: rgb(255, 255, 255,150);");
 
     ui->label_nettime->hide();
     ui->nettime->hide();
     ui->NetplayerLabel->hide();
+    ui->label_5->hide();
+    ui->pushButton_ai->hide();
 
     blackqizi=true;                                              //设置默认值
     mode=Normal;
 
-    QLabel *netlable= new QLabel(this);
-    QLabel *lable= new QLabel("  当前游戏模式：双人对战  ");
+    menu1 = new QMenu(this);
+    QAction *normalmode=menu1->addAction("双人对战模式");
+    QAction *AImode=menu1->addAction("人机对战模式");
+    QAction *aimode=menu1->addAction("机机对战模式");
+    QAction *netmode=menu1->addAction("网络对战模式");
+
+    connect(normalmode,&QAction::triggered,this,&MainWindow::triggeredNormal);
+    connect(AImode,&QAction::triggered,this,&MainWindow::triggeredAI);
+    connect(aimode,&QAction::triggered,this,&MainWindow::triggeredai);
+    connect(netmode,&QAction::triggered,this,&MainWindow::triggeredNet);
+
+
+    netlable= new QLabel(this);
+    lable= new QLabel("  当前游戏模式：双人对战  ");
     ui->statusbar->setFixedHeight(40);
     ui->statusbar->addWidget(lable);
 
 
-    connect(ui->actionnormal,&QAction::triggered,this,[=](){      //双人对战模式
+    connect(ui->actionnormal,&QAction::triggered,this,&MainWindow::triggeredNormal);      //双人对战模式
+    connect(ui->actionAI,&QAction::triggered,this,&MainWindow::triggeredAI);              //人机对战模式
+    connect(ui->actionai,&QAction::triggered,this,&MainWindow::triggeredai);              //机机对战模式
+    connect(ui->actionnetgame,&QAction::triggered,this,&MainWindow::triggeredNet);        //网络对战模式
 
-        mode=Normal;
-        ui->pushButton_2->show();
-        ui->pushButton->show();
-        ui->label->show();
-        ui->label_3->show();
-        ui->label2->show();
-        ui->label_2->show();
-        ui->label_nettime->hide();
-        ui->nettime->hide();
-        ui->NetplayerLabel->hide();
-
-        lable->setText("  当前游戏模式：双人对战  ");
-        ui->statusbar->addWidget(lable);
-        netlable->setText(" ");
-        ui->statusbar->addPermanentWidget(netlable);
-
-    });
-
-    connect(ui->actionAI,&QAction::triggered,this,[=](){       //人机对战模式
-
-        mode=AI;
-        ui->pushButton_2->hide();
-        ui->pushButton->show();
-        ui->label->show();
-        ui->label_3->show();
-        ui->label2->show();
-        ui->label_2->show();
-        ui->label_nettime->hide();
-        ui->nettime->hide();
-        ui->NetplayerLabel->hide();
-
-        lable->setText("  当前游戏模式：人机对战  ");
-        ui->statusbar->addWidget(lable);
-        netlable->setText(" ");
-        ui->statusbar->addPermanentWidget(netlable);
-    });
-
-    connect(ui->actionnetgame,&QAction::triggered,this,[=](){      //网络对战模式
-
-        mode=Net;
-        ui->pushButton_2->hide();
-        ui->pushButton->hide();
-        ui->label->hide();
-        ui->label_3->hide();
-        ui->label2->hide();
-        ui->label_2->hide();
-        ui->label_nettime->show();
-        ui->nettime->show();       
-
-        lable->setText("  当前游戏模式：网络对战  ");
-        ui->statusbar->addWidget(lable);
-
-        gameserver=new QTcpServer;
-
-        gameserver->listen(QHostAddress::Any,6666);                   //开端口6666
-
-        connect(gameserver,&QTcpServer::newConnection,this,[=](){     //提示客户端已连接，准备读取信息
-                netlable->setText("客户端连接成功！");
-                ui->statusbar->addPermanentWidget(netlable);
-                ui->NetplayerLabel->show();
-                NetFlag=true;
-
-                socket=gameserver->nextPendingConnection();
-                connect(socket,SIGNAL(readyRead()),this,SLOT(receivemessage()));
-
-        });
-
-
-    });
 
 
     connect(ui->pushButton,&QPushButton::clicked,this,[=](){         //重新开始
@@ -505,6 +457,36 @@ void MainWindow::mouseReleaseEvent(QMouseEvent *event)
 }
 
 
+void MainWindow::on_pushButton_ai_clicked()
+{
+    //机机对战
+    if(mode==ai)
+    {
+        if(board.getbnum()==0)
+        {
+            board.placeqizi(10,10,BLACK);
+            blackqizi=false;
+            update();
+        }
+
+                timer = new QTimer(this);
+                connect(timer, SIGNAL(timeout()), this, SLOT(AIplacenode()));
+                timer->start(700);
+        }
+
+
+}
+
+
+
+void MainWindow::contextMenuEvent(QContextMenuEvent *event)
+{
+    menu1->move(cursor().pos());                               //让菜单显示的位置在鼠标的坐标上
+    if(board.getbnum()==0&&board.getwnum()==0)
+    menu1->show();
+}
+
+
 
 void MainWindow::renew()                               //更新棋盘，全部初始化
 {
@@ -563,15 +545,53 @@ void MainWindow::AIplacenode()                                    //AI下棋
             }
         }
 
+        int p;
+        if(blackqizi)
+            p=BLACK;
+        else
+            p=WHITE;
+
         srand(time(0));                                          //随机选择分数最大的一点落子
         int n=(rand()%(k-1))+1;
-        board.placeqizi(maxvalue[n].x,maxvalue[n].y,WHITE);
-        blackqizi=true;
+        board.placeqizi(maxvalue[n].x,maxvalue[n].y,p);
+
+        if(p==BLACK)
+            blackqizi=false;
+        else
+            blackqizi=true;
 
         if(judger.judgewin(board,maxvalue[n].x,maxvalue[n].y))
         {
-            Time2->stop();
-            QMessageBox::warning(NULL,"胜负已定：","白棋胜！");
+            if(mode!=ai)
+            {
+                Time2->stop();
+                QMessageBox::warning(NULL,"胜负已定：","白棋胜！");
+
+            }
+            else
+            {
+                timer->stop();
+                if(blackqizi)
+                    QMessageBox::warning(NULL,"胜负已定：","白棋胜！");
+                else
+                    QMessageBox::warning(NULL,"胜负已定：","黑棋胜！");
+            }
+            renew();
+        }
+        else if(judger.judgedraw(board))
+        {
+            if(mode!=ai)
+            {
+                Time2->stop();
+                Time1->stop();
+                QMessageBox::warning(NULL,"比赛结果：","和棋");
+            }
+            else
+            {
+                timer->stop();
+                QMessageBox::warning(NULL,"比赛结果：","和棋");
+            }
+
             renew();
         }
         update();
@@ -675,6 +695,116 @@ void MainWindow::showNettimelimit()
 
 
 
+void MainWindow::triggeredNormal()
+{
+    mode=Normal;
+    ui->pushButton_2->show();
+    ui->pushButton->show();
+    ui->pushButton_ai->hide();
+    ui->label->show();
+    ui->label_3->show();
+    ui->label2->show();
+    ui->label_2->show();
+    ui->label_4->show();
+    ui->label_6->show();
+    ui->label_5->hide();
+    ui->label_nettime->hide();
+    ui->nettime->hide();
+    ui->NetplayerLabel->hide();
+
+    lable->setText("  当前游戏模式：双人对战  ");
+    ui->statusbar->addWidget(lable);
+    netlable->setText(" ");
+    ui->statusbar->addPermanentWidget(netlable);
+}
+
+
+void MainWindow::triggeredAI()
+{
+    mode=AI;
+    ui->pushButton_2->hide();
+    ui->pushButton->show();
+    ui->pushButton_ai->hide();
+    ui->label->show();
+    ui->label_3->show();
+    ui->label2->show();
+    ui->label_2->show();
+    ui->label_4->show();
+    ui->label_6->show();
+    ui->label_5->hide();
+    ui->label_nettime->hide();
+    ui->nettime->hide();
+    ui->NetplayerLabel->hide();
+
+    lable->setText("  当前游戏模式：人机对战  ");
+    ui->statusbar->addWidget(lable);
+    netlable->setText(" ");
+    ui->statusbar->addPermanentWidget(netlable);
+}
+
+
+void MainWindow::triggeredai()
+{
+    mode=ai;
+    ui->pushButton_2->hide();
+    ui->pushButton->hide();
+    ui->pushButton_ai->show();
+    ui->label->hide();
+    ui->label_3->hide();
+    ui->label2->hide();
+    ui->label_2->hide();
+    ui->label_4->hide();
+    ui->label_6->hide();
+    ui->label_5->hide();
+    ui->label_nettime->hide();
+    ui->nettime->hide();
+    ui->NetplayerLabel->hide();
+
+    lable->setText("  当前游戏模式：机机对战  ");
+    ui->statusbar->addWidget(lable);
+    netlable->setText(" ");
+    ui->statusbar->addPermanentWidget(netlable);
+}
+
+
+void MainWindow::triggeredNet()
+{
+    mode=Net;
+    ui->pushButton_2->hide();
+    ui->pushButton_ai->hide();
+    ui->pushButton->hide();
+    ui->label->hide();
+    ui->label_3->hide();
+    ui->label2->hide();
+    ui->label_2->hide();
+    ui->label_4->hide();
+    ui->label_6->hide();
+    ui->label_5->show();
+    ui->label_nettime->show();
+    ui->nettime->show();
+
+    lable->setText("  当前游戏模式：网络对战  ");
+    ui->statusbar->addWidget(lable);
+
+    gameserver=new QTcpServer;
+
+    gameserver->listen(QHostAddress::Any,6666);                   //开端口6666
+
+    connect(gameserver,&QTcpServer::newConnection,this,[=](){     //提示客户端已连接，准备读取信息
+            netlable->setText("客户端连接成功！");
+            ui->statusbar->addPermanentWidget(netlable);
+            ui->NetplayerLabel->show();
+            NetFlag=true;
+
+            socket=gameserver->nextPendingConnection();
+            connect(socket,SIGNAL(readyRead()),this,SLOT(receivemessage()));
+
+    });
+
+}
+
+
+
 QImage MainWindow::ConvertImageToTransparent(QImage image)           //设置背景图片透明程度
 {
         image = image.convertToFormat(QImage::Format_ARGB32);
@@ -692,4 +822,5 @@ QImage MainWindow::ConvertImageToTransparent(QImage image)           //设置背
         }
         return image;
 }
+
 

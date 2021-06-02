@@ -9,7 +9,7 @@ using namespace std;
 #define BLACK 1
 #define WHITE 2
 
-enum gamemode{ Normal,AI,Net };          //游戏模式
+enum gamemode{ Normal,AI,ai,Net };          //游戏模式
 
 
 struct Node{                             //每个棋子坐标
@@ -50,7 +50,7 @@ class qizi{                              //棋子类
 class checkerboard{                           //棋盘类
     int size=20;
     qizi qz[22][22];
-    Node nodeblack[200],nodewhite[200];       //每下一个棋子便将坐标存入相应的数组
+    Node nodeblack[250],nodewhite[250];       //每下一个棋子便将坐标存入相应的数组
     int ib=0,iw=0;                            //记录数组中棋子个数
 
     public:
