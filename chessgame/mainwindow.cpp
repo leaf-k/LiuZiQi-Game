@@ -20,12 +20,14 @@ MainWindow::MainWindow(QWidget *parent)
     ui->pushButton->setStyleSheet("background-color: rgb(255, 255, 255,150);");     //设置按钮颜色
     ui->pushButton_2->setStyleSheet("background-color: rgb(255, 255, 255,150);");
     ui->pushButton_ai->setStyleSheet("background-color: rgb(255, 255, 255,150);");
+    ui->pushButton_stop->setStyleSheet("background-color: rgb(255, 255, 255,150);");
 
     ui->label_nettime->hide();
     ui->nettime->hide();
     ui->NetplayerLabel->hide();
     ui->label_5->hide();
     ui->pushButton_ai->hide();
+    ui->pushButton_stop->hide();
 
     blackqizi=true;                                              //设置默认值
     mode=Normal;
@@ -462,6 +464,7 @@ void MainWindow::on_pushButton_ai_clicked()
     //机机对战
     if(mode==ai)
     {
+        ui->pushButton_stop->show();
         if(board.getbnum()==0)
         {
             board.placeqizi(10,10,BLACK);
@@ -477,6 +480,13 @@ void MainWindow::on_pushButton_ai_clicked()
 
 }
 
+
+void MainWindow::on_pushButton_stop_clicked()
+{
+    timer->stop();
+    renew();
+    ui->pushButton_stop->hide();
+}
 
 
 void MainWindow::contextMenuEvent(QContextMenuEvent *event)
@@ -701,6 +711,7 @@ void MainWindow::triggeredNormal()
     ui->pushButton_2->show();
     ui->pushButton->show();
     ui->pushButton_ai->hide();
+    ui->pushButton_stop->hide();
     ui->label->show();
     ui->label_3->show();
     ui->label2->show();
@@ -725,6 +736,7 @@ void MainWindow::triggeredAI()
     ui->pushButton_2->hide();
     ui->pushButton->show();
     ui->pushButton_ai->hide();
+    ui->pushButton_stop->hide();
     ui->label->show();
     ui->label_3->show();
     ui->label2->show();
@@ -772,6 +784,7 @@ void MainWindow::triggeredNet()
     mode=Net;
     ui->pushButton_2->hide();
     ui->pushButton_ai->hide();
+    ui->pushButton_stop->hide();
     ui->pushButton->hide();
     ui->label->hide();
     ui->label_3->hide();
@@ -822,5 +835,7 @@ QImage MainWindow::ConvertImageToTransparent(QImage image)           //设置背
         }
         return image;
 }
+
+
 
 

@@ -76,5 +76,6 @@ private slots:
     void receivemessage();                          //接收客户端信息
 
     void on_pushButton_ai_clicked();
+    void on_pushButton_stop_clicked();
 };
 #endif // MAINWINDOW_H
