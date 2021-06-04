@@ -124,13 +124,11 @@ void MainWindow::mouseReleaseEvent(QMouseEvent *event)
 
                 update();
 
-                char bufferSend[445];             //bufferSend[442]棋子x坐标 [443]棋子y坐标
-                bufferSend[442]=i+'0';
-                bufferSend[443]=j+'0';
 
-                for(int i=0;i<442;i++)
-                    bufferSend[i]=bufferReceive[i];
-                socket->write(bufferSend);
+                bufferReceive[442]=i+'0';         //bufferReceive[442]棋子x坐标 [443]棋子y坐标
+                bufferReceive[443]=j+'0';
+
+                socket->write(bufferReceive);
 
             }
 
@@ -161,15 +159,17 @@ void MainWindow::on_pushButton_clicked()                     //连接服务端
 void MainWindow::receivemessage()                            //接收服务端信息
 {
       socket->read(bufferReceive,socket->bytesAvailable());
+      update();
 
       if(bufferReceive[441]=='b')                            //bufferReceive[441]=w/b/j/c  白棋赢/黑棋赢/禁手/超时标志
       {
+          update();
           QMessageBox::warning(NULL,"胜负已定：","黑棋胜！");
           renew();
       }
 
       else if(bufferReceive[441]=='c')
-      {
+      {         
           if(player==BLACK)
               QMessageBox::warning(NULL,"超时：","黑棋胜！");
           else
@@ -179,7 +179,6 @@ void MainWindow::receivemessage()                            //接收服务端�
 
       else
       {
-      update();
 
       if(bufferReceive[441]=='w')
       {
@@ -223,18 +222,22 @@ void MainWindow::renew()                         //更新棋盘
 
 void MainWindow::on_pushButton_2_clicked()       //重新开始
 {
-    if(bnum==wnum)
+    if(bnum!=0&&wnum!=0)
     {
-        Nettimer->stop();
-        ui->nettime->setText("15");
+        if((bnum==wnum&&player==BLACK)||(player==WHITE&&bnum>wnum))
+        {
+            Nettimer->stop();
+            ui->nettime->setText("15");
+        }
+
+        char buffersend[445];
+        for(int i=0;i<445;i++)
+            buffersend[i]='0';
+        buffersend[441]='r';
+        socket->write(buffersend);
+        renew();
     }
 
-    char buffersend[443];
-    buffersend[441]='r';
-    for(int i=0;i<441;i++)
-        buffersend[i]='0';
-    socket->write(buffersend);
-    renew();
 }
 
 
@@ -287,8 +290,6 @@ void MainWindow::on_radioButtonw_clicked()              //选择白棋
         playerlabel->setText("执白棋，后落子 ");
         ui->statusbar->addPermanentWidget(playerlabel);
     }
-    else
-        player=BLACK;
 
 }
 
@@ -303,6 +304,4 @@ void MainWindow::on_radioButtonb_clicked()               //选择黑棋
         playerlabel->setText("执黑棋，先落子 ");
         ui->statusbar->addPermanentWidget(playerlabel);
     }
-    else
-        player=BLACK;
 }

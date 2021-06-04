@@ -146,7 +146,7 @@ class judgement{
         }
 
         int FLAG=0;                                         //是否产生禁手标志
-        bool judgewin(checkerboard board,int x,int y)       //判断禁手
+        bool judgewin(checkerboard board,int x,int y)       //判断输赢、禁手
         {
             FLAG=0;
             int directionx[8]={-1,1,0,0,-1,1,-1,1};         //上下，左右，左上右下，右上左下
@@ -204,7 +204,7 @@ class judgement{
             //四四禁手
             if(n4>1)
             {
-                int count=0;
+                int count=0;                //记录霍斯个数
                 for(int i=0;i<n4;i++)
                 {
                     int X=x+directionx[J4[i]*2];

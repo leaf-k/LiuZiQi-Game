@@ -122,7 +122,7 @@ MainWindow::~MainWindow()
 void MainWindow::receivemessage()                         //网络对战接收客户端棋盘信息
 {
     char bufferReceive[445];
-    for(int i=0;i<442;i++)
+    for(int i=0;i<445;i++)
         bufferReceive[i]='0';
     socket->read(bufferReceive,socket->bytesAvailable());
 
@@ -145,8 +145,11 @@ void MainWindow::receivemessage()                         //网络对战接收�
     {
         if(bufferReceive[441]=='r')                          //客户端要求重新开始
         {
-            Nettimer->stop();
-            ui->nettime->setText("15");
+            if((netplayer==BLACK&&board.getbnum()==board.getwnum())||(netplayer==WHITE&&board.getbnum()>board.getwnum()))
+            {
+                Nettimer->stop();
+                ui->nettime->setText("15");
+            }
             renew();
         }
 
@@ -372,7 +375,7 @@ void MainWindow::mouseReleaseEvent(QMouseEvent *event)
             {
                 if(netplayer==WHITE&&board.getbnum()<=board.getwnum())
                     QMessageBox::warning(NULL,"提示：","请等待客户端落子！");
-                else if(netplayer==BLACK&&board.getbnum()!=board.getwnum()&&board.getbnum()!=0)
+                else if(netplayer==BLACK&&board.getbnum()>board.getwnum())
                     QMessageBox::warning(NULL,"提示：","请等待客户端落子！");
                 else if(board.showqizi(i,j)==-1)
                 {
@@ -402,12 +405,16 @@ void MainWindow::mouseReleaseEvent(QMouseEvent *event)
                     board.placeqizi(i,j,netplayer);
                     update();
 
+                    for(int i=0;i<21;i++)
+                        for(int j=0;j<21;j++)
+                            buffer[i*21+j]=board.showqizi(i,j)+'0';
+
                     if(judger.judgewin(board,i,j))
                     {
                         if(netplayer==WHITE)
                             buffer[441]='w';
                         else
-                            buffer[441]='b';
+                            buffer[441]='b';                    
 
                         socket->write(buffer);
 
@@ -427,18 +434,7 @@ void MainWindow::mouseReleaseEvent(QMouseEvent *event)
 
                     else
                     {
-                        int k=0;
-
-                        for(int i=0;i<21;i++)
-                        {
-                            for(int j=0;j<21;j++)
-                            {
-                                buffer[k]=board.showqizi(i,j)+'0';
-                                k++;
-                            }
-                        }
                         buffer[441]='0';
-
                         socket->write(buffer);
                     }
 
@@ -462,7 +458,7 @@ void MainWindow::mouseReleaseEvent(QMouseEvent *event)
 void MainWindow::on_pushButton_ai_clicked()
 {
     //机机对战
-    if(mode==ai)
+    if(mode==ai&&board.getbnum()==0&&board.getwnum()==0)
     {
         ui->pushButton_stop->show();
         if(board.getbnum()==0)
@@ -475,7 +471,7 @@ void MainWindow::on_pushButton_ai_clicked()
                 timer = new QTimer(this);
                 connect(timer, SIGNAL(timeout()), this, SLOT(AIplacenode()));
                 timer->start(700);
-        }
+     }
 
 
 }
@@ -585,6 +581,7 @@ void MainWindow::AIplacenode()                                    //AI下棋
                     QMessageBox::warning(NULL,"胜负已定：","白棋胜！");
                 else
                     QMessageBox::warning(NULL,"胜负已定：","黑棋胜！");
+                ui->pushButton_stop->hide();
             }
             renew();
         }
@@ -600,6 +597,7 @@ void MainWindow::AIplacenode()                                    //AI下棋
             {
                 timer->stop();
                 QMessageBox::warning(NULL,"比赛结果：","和棋");
+                ui->pushButton_stop->hide();
             }
 
             renew();
